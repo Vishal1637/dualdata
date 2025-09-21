@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import { isSupabaseConfigured } from '../supabaseClient';
 import { Database, Mail, Lock, LogIn, CheckCircle } from 'lucide-react';
 
 const LoginPage = () => {
@@ -25,6 +26,12 @@ const LoginPage = () => {
     e.preventDefault();
     setError('');
     setSuccess('');
+    
+    if (!isSupabaseConfigured) {
+      setError('Supabase is not configured. Please set up your Supabase credentials.');
+      return;
+    }
+    
     setLoading(true);
     try {
       await login(email, password);
@@ -34,6 +41,48 @@ const LoginPage = () => {
       setLoading(false);
     }
   };
+
+  if (!isSupabaseConfigured) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4 relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md"
+        >
+          <div className="bg-slate-800/50 backdrop-blur-lg border border-slate-700 rounded-2xl shadow-2xl p-8">
+            <div className="text-center mb-8">
+              <div className="inline-block p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl mb-4">
+                <Database className="h-8 w-8 text-white" />
+              </div>
+              <h1 className="text-3xl font-bold text-slate-100">Setup Required</h1>
+              <p className="text-slate-400 mt-2">Supabase configuration is missing.</p>
+            </div>
+
+            <div className="bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 text-sm p-4 rounded-lg mb-6">
+              <h3 className="font-semibold mb-2">Configuration Steps:</h3>
+              <ol className="list-decimal list-inside space-y-1 text-xs">
+                <li>Create a Supabase project at <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">supabase.com</a></li>
+                <li>Go to Settings → API in your Supabase dashboard</li>
+                <li>Copy your Project URL and anon public key</li>
+                <li>Update the .env file with your credentials</li>
+                <li>Restart the development server</li>
+              </ol>
+            </div>
+
+            <div className="bg-slate-700/50 p-4 rounded-lg">
+              <p className="text-xs text-slate-400 mb-2">Required .env variables:</p>
+              <code className="text-xs text-slate-300 block">
+                VITE_SUPABASE_URL=https://your-project.supabase.co<br/>
+                VITE_SUPABASE_ANON_KEY=your-anon-key
+              </code>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4 relative z-10">
