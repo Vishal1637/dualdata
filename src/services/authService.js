@@ -1,7 +1,14 @@
 // This service now uses the real Supabase client.
-import { supabase } from '../supabaseClient';
+import { supabase, isSupabaseConfigured } from '../supabaseClient';
+
+const checkConfiguration = () => {
+  if (!isSupabaseConfigured) {
+    throw new Error('Supabase is not configured. Please set up your Supabase credentials in the .env file.');
+  }
+};
 
 export const login = async (email, password) => {
+  checkConfiguration();
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -11,6 +18,7 @@ export const login = async (email, password) => {
 };
 
 export const signup = async (name, email, password) => {
+  checkConfiguration();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -26,6 +34,7 @@ export const signup = async (name, email, password) => {
 };
 
 export const requestPasswordReset = async (email) => {
+  checkConfiguration();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${window.location.origin}/update-password`, // A page you would create for resetting
   });
@@ -34,11 +43,18 @@ export const requestPasswordReset = async (email) => {
 };
 
 export const logout = async () => {
+  checkConfiguration();
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 };
 
 export const onAuthStateChange = (callback) => {
+  if (!isSupabaseConfigured) {
+    // Return a mock subscription that immediately calls back with no user
+    callback(null);
+    return { unsubscribe: () => {} };
+  }
+  
   const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
     const user = session?.user ? {
       id: session.user.id,
